@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout (title, content, menu, extraHead)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title}">W-Novel 관리자</title>
+    <!-- Bootstrap 5 CSS (WebJars) -->
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- [추가] 페이지별 커스텀 CSS 영역 (extraHead 파라미터가 null이 아니면 렌더링) -->
+    <!-- Elvis 연산자(?:)를 사용하여 extraHead가 있으면 사용하고, 없으면 빈 조각(~{})을 사용하도록 처리 -->
+    <th:block th:replace="${extraHead} ?: ~{}" />
+
+    <style>
+        body { min-height: 100vh; display: flex; flex-direction: column; background-color: #f8f9fa; }
+        .wrapper { display: flex; flex: 1; min-height: 100vh; }
+        
+        /* 사이드바 스타일 */
+        .sidebar { min-width: 250px; max-width: 250px; background-color: #212529; color: white; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; background: #1a1d20; font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        .sidebar-menu { flex: 1; padding: 0; list-style: none; margin-top: 20px; }
+        .sidebar a { color: rgba(255,255,255,.8); text-decoration: none; padding: 12px 20px; display: flex; align-items: center; gap: 10px; border-left: 4px solid transparent; transition: all 0.2s; }
+        .sidebar a:hover { background-color: #343a40; color: white; padding-left: 25px; }
+        .sidebar a.active { background-color: #0d6efd; color: white; border-left-color: white; }
+        .sidebar i { width: 20px; text-align: center; }
+
+        /* 메인 컨텐츠 영역 */
+        .main-content { flex: 1; display: flex; flex-direction: column; width: 100%; overflow-x: hidden; }
+        .content-body { padding: 30px; flex: 1; }
+        
+        /* 공통 유틸리티 */
+        .card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); margin-bottom: 20px; }
+        .card-header { background-color: white; border-bottom: 1px solid rgba(0,0,0,0.05); font-weight: 600; padding: 15px 20px; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <!-- 사이드바 -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <i class="bi bi-book-half text-primary"></i> W-Novel Admin
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="/admin/dashboard" th:classappend="${menu == 'dashboard'} ? 'active'">
+                    <i class="bi bi-speedometer2"></i> 대시보드
+                </a>
+            </li>
+            <li>
+                <a href="/admin/novel/list" th:classappend="${menu == 'novel'} ? 'active'">
+                    <i class="bi bi-journal-text"></i> 소설 관리
+                </a>
+            </li>
+            <li>
+                <a href="#" th:classappend="${menu == 'user'} ? 'active'">
+                    <i class="bi bi-people"></i> 회원 관리
+                </a>
+            </li>
+            <li>
+                <a href="#" th:classappend="${menu == 'point'} ? 'active'">
+                    <i class="bi bi-coin"></i> 포인트/정산
+                </a>
+            </li>
+        </ul>
+        <div class="mt-auto p-3 border-top border-secondary">
+            <div class="d-flex align-items-center justify-content-between mb-2 px-2">
+                <small class="text-white-50">Logged in as Admin</small>
+            </div>
+            <form th:action="@{/admin/logout}" method="post">
+                <button class="btn btn-outline-danger w-100 btn-sm" type="submit">
+                    <i class="bi bi-box-arrow-right"></i> 로그아웃
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="main-content">
+        <!-- 상단 헤더 -->
+        <header class="bg-white border-bottom p-3 d-flex justify-content-between align-items-center shadow-sm">
+            <span class="fw-bold text-secondary" th:text="${title}">페이지 제목</span>
+            <div>
+                <a href="/" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-box-arrow-up-right"></i> 사이트 바로가기
+                </a>
+            </div>
+        </header>
+
+        <!-- 실제 페이지 내용이 주입되는 곳 -->
+        <div class="content-body">
+            <th:block th:replace="${content}"></th:block>
+        </div>
+        
+        <footer class="text-center py-3 text-muted border-top bg-white">
+            <small>&copy; 2024 W-Novel Management System. All rights reserved.</small>
+        </footer>
+    </main>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

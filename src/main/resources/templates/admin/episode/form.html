@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{fragments/layout :: layout('회차 등록', ~{::div.content-wrapper}, 'novel', ~{::#css-resources})}">
+<head>
+    <th:block id="css-resources">
+        <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+        <style>
+            .note-editable { background-color: white; }
+        </style>
+    </th:block>
+</head>
+<body>
+
+<div class="content-wrapper">
+    <div class="d-flex align-items-center mb-4">
+        <a th:href="@{/admin/novel/detail/{id}(id=${novelId})}" class="btn btn-outline-secondary me-3">
+            <i class="bi bi-arrow-left"></i> 소설 상세로
+        </a>
+        <h2 class="m-0 text-dark fw-bold">새 회차 등록</h2>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-12">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form th:action="@{/admin/episode/create}" method="post">
+                        <input type="hidden" name="novelId" th:value="${novelId}">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="title" class="form-label fw-bold">회차 제목 <span class="text-danger">*</span></label>
+                                <!-- [수정] required 속성 제거 및 placeholder 변경 -->
+                                <input type="text" class="form-control" id="title" name="title" placeholder="제목을 비워두면 이전 회차 제목(또는 소설 제목)이 자동으로 등록됩니다.">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="episodeNumber" class="form-label fw-bold">회차 번호</label>
+                                <input type="number" class="form-control" id="episodeNumber" name="episodeNumber" th:value="${nextEpisodeNumber}" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="requiredPoint" class="form-label fw-bold">차감 포인트</label>
+                                <input type="number" class="form-control" id="requiredPoint" name="requiredPoint" value="0" min="0">
+                            </div>
+                        </div>
+
+                        <!-- Summernote 에디터 -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">본문 내용</label>
+                            <textarea id="summernote" name="content"></textarea>
+                            <!-- [추가] 글자 수 표시 영역 -->
+                            <div class="text-end mt-2 text-muted">
+                                <small>현재 글자 수: <span id="charCount" class="fw-bold text-primary">0</span>자 (공백 포함)</small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end border-top pt-4">
+                            <button type="submit" class="btn btn-primary px-5">회차 등록 완료</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(function() {
+            $('#summernote').summernote({
+                placeholder: '소설 본문을 작성하세요. 이미지를 드래그하거나 업로드하면 자동으로 본문에 삽입됩니다.',
+                tabsize: 2,
+                height: 600,
+                lang: 'ko-KR',
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['picture', 'link']],
+                    ['view', ['fullscreen', 'codeview']]
+                ],
+                callbacks: {
+                    // 이미지 업로드 콜백
+                    onImageUpload: function(files) {
+                        for (let i = 0; i < files.length; i++) {
+                            uploadImage(files[i]);
+                        }
+                    },
+                    // [추가] 텍스트 변경 감지 콜백 (키 입력, 붙여넣기 등)
+                    onChange: function(contents, $editable) {
+                        // HTML 태그를 제외한 순수 텍스트 길이 계산
+                        // $(this).summernote('text')는 태그가 제거된 텍스트를 반환합니다.
+                        const textLength = $(this).summernote('text').length;
+                        $('#charCount').text(textLength.toLocaleString());
+                    },
+                    // [추가] 초기화 시 글자 수 계산
+                    onInit: function() {
+                        const textLength = $(this).summernote('text').length;
+                        $('#charCount').text(textLength.toLocaleString());
+                    }
+                }
+            });
+
+            function uploadImage(file) {
+                let formData = new FormData();
+                formData.append('file', file);
+                formData.append('novelId', '[[${novelId}]]');
+
+                $.ajax({
+                    url: '/admin/api/episode/upload-image',
+                    method: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(url) {
+                        $('#summernote').summernote('insertImage', url);
+                    },
+                    error: function(err) {
+                        console.error(err);
+                        alert('이미지 업로드에 실패했습니다.');
+                    }
+                });
+            }
+        });
+    </script>
+</div>
+
+</body>
+</html>

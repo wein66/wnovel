@@ -1,0 +1,63 @@
+# Spring Boot Application 설정
+server:
+  port: 8081
+
+spring:
+  application:
+    name: wnovel
+  # ----------------------------------------
+  # 데이터 소스 (MariaDB) 설정
+  # ----------------------------------------
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    # 데이터베이스 연결 URL을 실제 환경에 맞게 변경해야 합니다.
+    url: jdbc:mariadb://weindb.c9acki6gcwpa.ap-southeast-2.rds.amazonaws.com/weindb?serverTimezone=Asia/Seoul
+    username: musicart
+    password: "!good6617"
+    
+  # ----------------------------------------
+  # JPA (Hibernate) 설정
+  # ----------------------------------------
+  jpa:
+    hibernate:
+      # DDL(스키마) 자동 생성 기능. 개발 시 'update'를 사용합니다.
+      # 운영 환경에서는 'none' 또는 'validate'를 권장합니다.
+      ddl-auto: update 
+    show-sql: true # 실행되는 SQL 쿼리를 콘솔에 출력 (디버깅용)
+    properties:
+      hibernate:
+        format_sql: true # SQL 포맷팅
+    # 엔티티가 위치한 패키지 지정
+    properties.jakarta.persistence.validation.mode: none
+
+  # ----------------------------------------
+  # Thymeleaf 설정
+  # ----------------------------------------
+  thymeleaf:
+    cache: false # 개발 중 캐시 비활성화
+    prefix: classpath:/templates/
+    suffix: .html
+
+ # ----------------------------------------
+  # 파일 업로드 설정 (멀티파트 제한 등)
+  # ----------------------------------------
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# ----------------------------------------
+# 커스텀 파일 저장 경로 설정
+# ----------------------------------------
+file:
+  # [중요] 윈도우 경로라도 반드시 '/' (슬래시)를 사용하세요.
+  # 경로 끝에도 반드시 '/'를 붙여주세요.
+  # FileStoreService가 이 경로 아래에 'novel/...' 폴더를 자동으로 생성합니다.
+  # upload-dir: E:/2025-2/aws/wnovel/src/main/resources/static/
+  upload-dir: /home/wein/src/main/resources/static/
+
+# 로깅 설정 (SQL 쿼리 출력을 위해)
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace

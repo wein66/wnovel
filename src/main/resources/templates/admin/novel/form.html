@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{fragments/layout :: layout('소설 등록', ~{::div.content-wrapper}, 'novel', ~{::css-resources})}">
+<head>
+    <th:block th:fragment="css-resources">
+        <!-- 추가 라이브러리 (Summernote & Cropper.js) -->
+        <!-- crossorigin="anonymous" 추가: 스크립트 에러 발생 시 상세 내용을 확인하기 위함 -->
+        <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+        <style>
+            /* 크롭 모달 내 이미지 스타일 */
+            .img-container {
+                max-height: 500px;
+                display: block;
+            }
+            .img-container img {
+                max-width: 100%;
+                display: block;
+            }
+            /* 미리보기 이미지 스타일 */
+            #preview-image {
+                width: 200px; /* 화면에 보여질 크기 (비율은 2:3 유지) */
+                height: 300px;
+                object-fit: cover;
+                border: 1px solid #ddd;
+                display: none; /* 초기엔 숨김 */
+            }
+            /* 로딩 스피너 오버레이 */
+            #loadingOverlay {
+                display: none;
+                position: absolute;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(255, 255, 255, 0.8);
+                z-index: 10;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+
+<!-- [중요] 모든 컨텐츠(모달, 스크립트 포함)를 이 div 안에 넣어야 레이아웃에 정상적으로 포함됩니다. -->
+<div class="content-wrapper">
+    <div class="d-flex align-items-center mb-4">
+        <a href="/admin/novel/list" class="btn btn-outline-secondary me-3">
+            <i class="bi bi-arrow-left"></i> 목록
+        </a>
+        <h2 class="m-0 text-dark fw-bold">새 소설 등록</h2>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form th:action="@{/admin/novel/create}" method="post" enctype="multipart/form-data" id="novelForm">
+                        
+                        <!-- 제목 입력 -->
+                        <div class="mb-4">
+                            <label for="title" class="form-label fw-bold">소설 제목 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-lg" id="title" name="title" placeholder="소설 제목을 입력하세요" required>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="category" class="form-label fw-bold">카테고리 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="" selected disabled>카테고리를 선택하세요</option>
+                                    <option th:each="cat : ${categories}" 
+                                            th:value="${cat}" 
+                                            th:text="${cat}">판타지</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">상태</label>
+                                <div>
+                                    <input type="radio" class="btn-check" name="status" id="status-draft" value="DRAFT" checked>
+                                    <label class="btn btn-outline-secondary" for="status-draft">임시저장</label>
+
+                                    <input type="radio" class="btn-check" name="status" id="status-published" value="PUBLISHED">
+                                    <label class="btn btn-outline-success" for="status-published">연재시작</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 표지 이미지 업로드 및 미리보기 -->
+                        <div class="mb-4">
+                            <label for="coverImageInput" class="form-label fw-bold">표지 이미지</label>
+                            <div class="d-flex align-items-start gap-4">
+                                <div class="flex-grow-1">
+                                    <div class="input-group mb-2">
+                                        <input class="form-control" type="file" id="coverImageInput" accept="image/*">
+                                        <!-- AI 생성 버튼 추가 -->
+                                        <button class="btn btn-outline-primary" type="button" id="btnOpenAiModal">
+                                            <i class="bi bi-magic"></i> AI 자동생성
+                                        </button>
+                                    </div>
+                                    <!-- 실제 전송될 파일 (hidden) -->
+                                    <input type="file" id="finalCoverImage" name="coverImage" style="display: none;">
+                                    
+                                    <div class="form-text">
+                                        - 이미지를 직접 업로드하거나 AI를 통해 생성할 수 있습니다.<br>
+                                        - 선택/생성된 이미지는 자동으로 2:3 비율(600x900) 편집창이 열립니다.
+                                    </div>
+                                </div>
+                                <!-- 미리보기 영역 -->
+                                <div>
+                                    <img id="preview-image" class="rounded shadow-sm" src="#" alt="Cover Preview">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 설명 입력 (Summernote 위지윅) -->
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-bold">줄거리 / 작품 설명</label>
+                            <textarea id="summernote" name="description"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end border-top pt-4">
+                            <button type="button" class="btn btn-light me-md-2" onclick="history.back()">취소</button>
+                            <button type="submit" class="btn btn-primary px-5">소설 등록</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. 이미지 크롭 모달 -->
+    <div class="modal fade" id="cropModal" tabindex="-1" aria-labelledby="cropModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cropModalLabel">이미지 자르기 (2:3 비율)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="img-container">
+                        <img id="imageToCrop" src="#" alt="Picture">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary" id="cropAndSave">자르기 및 적용</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. AI 이미지 생성 모달 (신규) -->
+    <div class="modal fade" id="aiGenModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content position-relative">
+                <!-- 로딩 오버레이 -->
+                <div id="loadingOverlay" class="rounded">
+                    <div class="spinner-border text-primary mb-2" role="status"></div>
+                    <div class="fw-bold text-primary">AI가 그림을 그리고 있어요...</div>
+                    <small class="text-muted">약 10~20초 정도 소요됩니다.</small>
+                </div>
+
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-stars text-warning"></i> AI 표지 자동 생성</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="aiPrompt" class="form-label fw-bold">어떤 표지를 만들까요?</label>
+                        <textarea class="form-control" id="aiPrompt" rows="3" placeholder="예: 중세 판타지 배경, 검을 든 은발의 기사, 웅장한 성, 애니메이션 스타일"></textarea>
+                        <div class="form-text text-muted">
+                            구체적으로 묘사할수록 더 좋은 결과가 나옵니다. (영어로 입력하면 더 정확할 수 있습니다)
+                        </div>
+                    </div>
+                    <div class="alert alert-light border d-flex align-items-center" role="alert">
+                        <i class="bi bi-info-circle-fill text-info me-2"></i>
+                        <div>생성된 이미지는 자동으로 크롭(자르기) 화면으로 이동합니다.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-primary" id="btnGenerateImage">
+                        <i class="bi bi-palette"></i> 이미지 생성하기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 스크립트 영역: content-wrapper 내부에 위치해야 함 -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js" crossorigin="anonymous"></script>
+
+    <script>
+        $(document).ready(function() {
+            // --- 1. Summernote 초기화 ---
+            $('#summernote').summernote({
+                placeholder: '작품에 대한 상세한 설명을 작성해주세요.',
+                tabsize: 2,
+                height: 400,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['link', 'picture']],
+                    ['view', ['fullscreen', 'codeview']]
+                ],
+                lang: 'ko-KR'
+            });
+
+            // --- 2. 변수 및 객체 초기화 ---
+            let cropper;
+            const image = document.getElementById('imageToCrop');
+            const fileInput = document.getElementById('coverImageInput');
+            
+            // Bootstrap Modal 초기화
+            // bootstrap 객체가 없는 경우를 대비해 window.bootstrap 확인
+            const cropModalEl = document.getElementById('cropModal');
+            const aiModalEl = document.getElementById('aiGenModal');
+            
+            let cropModal, aiModal;
+            
+            // 부트스트랩이 로드되었는지 확인 후 초기화
+            if (typeof bootstrap !== 'undefined') {
+                cropModal = new bootstrap.Modal(cropModalEl);
+                aiModal = new bootstrap.Modal(aiModalEl);
+            } else {
+                console.error("Bootstrap JS가 로드되지 않았습니다. 레이아웃 설정을 확인해주세요.");
+                return;
+            }
+
+            // --- 3. 로컬 파일 선택 시 크롭 모달 열기 ---
+            fileInput.addEventListener('change', function (e) {
+                const files = e.target.files;
+                if (files && files.length > 0) {
+                    const file = files[0];
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        openCropModal(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                    this.value = ''; // 같은 파일 재선택 허용
+                }
+            });
+
+            // --- 4. AI 모달 열기 및 생성 로직 ---
+            $('#btnOpenAiModal').click(function() {
+                // 소설 제목을 프롬프트에 기본값으로 넣어주면 편함
+                const title = $('#title').val();
+                if(title) {
+                    $('#aiPrompt').attr('placeholder', `예: ${title}에 어울리는 판타지 풍경, 화려한 마법 효과...`);
+                }
+                aiModal.show();
+            });
+
+            $('#btnGenerateImage').click(function() {
+                const prompt = $('#aiPrompt').val();
+                if(!prompt) {
+                    alert('이미지 설명을 입력해주세요!');
+                    return;
+                }
+
+                // 로딩 표시 시작
+                $('#loadingOverlay').css('display', 'flex');
+                
+                // [TODO] 실제 백엔드 API 연동 필요
+                // 현재는 3초 뒤에 더미(Dummy) 이미지를 생성했다고 가정합니다.
+                
+                setTimeout(() => {
+                    // 테스트용 더미 이미지 (Lorem Picsum)
+                    const dummyImageUrl = "https://picsum.photos/800/1200"; 
+                    
+                    // 실제 구현 시에는 백엔드에서 받은 base64 이미지나 URL을 사용합니다.
+                    // CORS 문제 회피를 위해 fetch로 blob을 받아옵니다
+                    fetch(dummyImageUrl)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const reader = new FileReader();
+                            reader.onloadend = function() {
+                                $('#loadingOverlay').hide(); // 로딩 끝
+                                aiModal.hide(); // AI 모달 닫기
+                                openCropModal(reader.result); // 크롭 모달 열기 (이미지 전달)
+                            }
+                            reader.readAsDataURL(blob);
+                        })
+                        .catch(err => {
+                            $('#loadingOverlay').hide();
+                            console.error(err);
+                            alert('이미지 생성에 실패했습니다. (데모 모드: 네트워크 오류)');
+                        });
+                }, 2000);
+            });
+
+            // --- 5. 크롭 모달 공통 함수 ---
+            function openCropModal(imageSrc) {
+                image.src = imageSrc;
+                cropModal.show();
+            }
+
+            // 모달 열릴 때 Cropper 생성
+            cropModalEl.addEventListener('shown.bs.modal', function () {
+                cropper = new Cropper(image, {
+                    aspectRatio: 2 / 3, 
+                    viewMode: 1,
+                    autoCropArea: 1,
+                });
+            });
+
+            // 모달 닫힐 때 Cropper 파괴
+            cropModalEl.addEventListener('hidden.bs.modal', function () {
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+            });
+
+            // --- 6. "자르기 및 적용" 버튼 ---
+            document.getElementById('cropAndSave').addEventListener('click', function () {
+                if (cropper) {
+                    const canvas = cropper.getCroppedCanvas({
+                        width: 600,
+                        height: 900,
+                        fillColor: '#fff',
+                    });
+
+                    canvas.toBlob(function (blob) {
+                        const url = URL.createObjectURL(blob);
+                        const preview = document.getElementById('preview-image');
+                        preview.src = url;
+                        preview.style.display = 'block';
+
+                        // 서버 전송용 input 교체
+                        const file = new File([blob], "ai_cover.jpg", { type: "image/jpeg" });
+                        const container = new DataTransfer();
+                        container.items.add(file);
+                        document.getElementById('finalCoverImage').files = container.files;
+
+                        cropModal.hide();
+                    }, 'image/jpeg', 0.9);
+                }
+            });
+        });
+    </script>
+</div> <!-- content-wrapper 종료 태그 위치 변경 -->
+
+</body>
+</html>

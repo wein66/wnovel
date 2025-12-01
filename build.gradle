@@ -1,0 +1,51 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.8'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'kr.co.musicart'
+version = '0.0.1-SNAPSHOT'
+description = 'Demo project for Spring Boot'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+	// Spring Security (인증 및 권한 관리)
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	// Thymeleaf (관리자 페이지 템플릿 엔진)
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+	// Lombok (Getter, Setter 등 코드 자동 생성)
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// 개발 편의성 도구 (Hot Reloading 등)
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    //프론트위해 추가
+	// [추가] Bootstrap 5 & jQuery (WebJars)
+	implementation 'org.webjars:bootstrap:5.3.2'
+	implementation 'org.webjars:jquery:3.7.1'
+
+	//테스트 의존성
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

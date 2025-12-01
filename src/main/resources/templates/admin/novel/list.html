@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{fragments/layout :: layout('소설 관리', ~{::div.content-wrapper}, 'novel', null)}">
+<body>
+
+<div class="content-wrapper">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0 text-dark fw-bold">📖 소설 관리</h2>
+        <a href="/admin/novel/create" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> 새 소설 등록
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4" style="width: 5%;">#</th>
+                            <th style="width: 10%;">표지</th>
+                            <th style="width: 30%;">제목</th>
+                            <th style="width: 10%;">카테고리</th>
+                            <th style="width: 10%;">작가</th>
+                            <th style="width: 10%;">상태</th>
+                            <th style="width: 10%;">등록일</th>
+                            <th style="width: 15%;">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 소설이 없을 경우 -->
+                        <tr th:if="${#lists.isEmpty(novels)}">
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-journal-x fs-1 d-block mb-3"></i>
+                                등록된 소설이 없습니다.
+                            </td>
+                        </tr>
+
+                        <!-- 소설 목록 반복 -->
+                        <tr th:each="novel : ${novels}">
+                            <td class="ps-4" th:text="${novel.id}">1</td>
+                            <td>
+                                <!-- 표지 이미지가 있으면 표시, 없으면 기본 아이콘 -->
+                                <img th:if="${novel.coverImageUrl}" th:src="${novel.coverImageUrl}" 
+                                     alt="Cover" class="rounded" style="width: 50px; height: 70px; object-fit: cover;">
+                                <div th:unless="${novel.coverImageUrl}" class="bg-secondary bg-opacity-10 rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 70px;">
+                                    <i class="bi bi-image text-muted"></i>
+                                </div>
+                            </td>
+                            <td>
+                                <a th:href="@{/admin/novel/detail/{id}(id=${novel.id})}" class="text-decoration-none fw-bold text-dark">
+                                    <span th:text="${novel.title}">소설 제목</span>
+                                </a>
+                                <small class="d-block text-muted text-truncate" style="max-width: 250px;" 
+                                       th:utext="${novel.description}">설명...</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25" 
+                                      th:text="${novel.category}">판타지</span>
+                            </td>
+                            <td th:text="${novel.author.nickname}">작가명</td>
+                            <td>
+                                <span class="badge" 
+                                      th:classappend="${novel.status.name() == 'PUBLISHED' ? 'bg-success' : (novel.status.name() == 'COMPLETED' ? 'bg-primary' : 'bg-secondary')}"
+                                      th:text="${novel.status}">연재중</span>
+                            </td>
+                            <td th:text="${#temporals.format(novel.createdAt, 'yyyy-MM-dd')}">2024-01-01</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-outline-secondary me-1">수정</a>
+                                <a href="#" class="btn btn-sm btn-outline-danger">삭제</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- 페이징 처리가 필요하다면 이곳에 추가 -->
+    </div>
+</div>
+
+</body>
+</html>

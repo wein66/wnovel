@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{fragments/layout :: layout('대시보드', ~{::div.dashboard-content}, 'dashboard', null)}">
+<body>
+
+<!-- 이 div 안의 내용이 layout의 content 부분으로 들어갑니다 -->
+<div class="dashboard-content">
+    
+    <div class="row g-4 mb-4">
+        <!-- 통계 카드 1 -->
+        <div class="col-md-3">
+            <div class="card h-100 border-start border-4 border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted text-uppercase m-0">총 소설 수</h6>
+                        <div class="icon-shape bg-primary bg-opacity-10 text-primary p-2 rounded">
+                            <i class="bi bi-journal-richtext fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="display-6 fw-bold text-dark mb-0">0</h2>
+                    <small class="text-success fw-bold"><i class="bi bi-arrow-up"></i> 0%</small> <small class="text-muted">Since last month</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 통계 카드 2 -->
+        <div class="col-md-3">
+            <div class="card h-100 border-start border-4 border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted text-uppercase m-0">총 회원 수</h6>
+                        <div class="icon-shape bg-success bg-opacity-10 text-success p-2 rounded">
+                            <i class="bi bi-people-fill fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="display-6 fw-bold text-dark mb-0">1</h2>
+                    <small class="text-success fw-bold"><i class="bi bi-arrow-up"></i> 1</small> <small class="text-muted">신규 가입</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 통계 카드 3 -->
+        <div class="col-md-3">
+            <div class="card h-100 border-start border-4 border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted text-uppercase m-0">오늘 조회수</h6>
+                        <div class="icon-shape bg-warning bg-opacity-10 text-warning p-2 rounded">
+                            <i class="bi bi-eye-fill fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="display-6 fw-bold text-dark mb-0">0</h2>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 통계 카드 4 -->
+        <div class="col-md-3">
+            <div class="card h-100 border-start border-4 border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted text-uppercase m-0">포인트 사용</h6>
+                        <div class="icon-shape bg-danger bg-opacity-10 text-danger p-2 rounded">
+                            <i class="bi bi-coin fs-4"></i>
+                        </div>
+                    </div>
+                    <h2 class="display-6 fw-bold text-dark mb-0">0 P</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 최근 소설 섹션 -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="m-0 fw-bold"><i class="bi bi-list-check me-2"></i>최근 등록된 소설</h5>
+                    <a href="/admin/novel/list" class="btn btn-sm btn-outline-primary">전체보기</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">제목</th>
+                                    <th>카테고리</th>
+                                    <th>작가</th>
+                                    <th>등록일</th>
+                                    <th>상태</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 데이터가 없을 때 -->
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        등록된 소설이 없습니다.
+                                    </td>
+                                </tr>
+                                <!-- 데이터 바인딩 예시 (나중에 타임리프로 반복) -->
+                                <!-- 
+                                <tr th:each="novel : ${recentNovels}">
+                                    <td class="ps-4 fw-bold" th:text="${novel.title}">소설 제목</td>
+                                    <td><span class="badge bg-secondary" th:text="${novel.category}">판타지</span></td>
+                                    <td th:text="${novel.author.nickname}">작가명</td>
+                                    <td th:text="${#temporals.format(novel.createdAt, 'yyyy-MM-dd')}">2024-01-01</td>
+                                    <td><span class="badge bg-success">연재중</span></td>
+                                </tr> 
+                                -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 시스템 로그 섹션 -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="m-0 fw-bold"><i class="bi bi-activity me-2"></i>시스템 활동</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="d-flex pb-3 border-bottom mb-3">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-check"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block mb-1">방금 전</small>
+                                <p class="mb-0 fw-bold">관리자 접속</p>
+                                <small class="text-muted">Admin 계정이 로그인했습니다.</small>
+                            </div>
+                        </div>
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-gear-fill"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block mb-1">시스템 시작</small>
+                                <p class="mb-0 fw-bold">서버 초기화 완료</p>
+                                <small class="text-muted">초기 관리자 계정 생성 로직이 수행되었습니다.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
