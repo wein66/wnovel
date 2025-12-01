@@ -19,7 +19,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // 경로 끝에 슬래시(/)가 반드시 있어야 함
         String resourceLocation = "file:///" + new java.io.File(uploadDir).getAbsolutePath() + "/";
 
-        registry.addResourceHandler("/novel-img/**")
+        registry.addResourceHandler("/novel/**")
                 .addResourceLocations(resourceLocation + "novel/");
         
         // static 폴더 설정 (기본값)
