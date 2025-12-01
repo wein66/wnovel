@@ -54,7 +54,7 @@ file:
   # 경로 끝에도 반드시 '/'를 붙여주세요.
   # FileStoreService가 이 경로 아래에 'novel/...' 폴더를 자동으로 생성합니다.
   # upload-dir: E:/2025-2/aws/wnovel/src/main/resources/static/
-  upload-dir: /home/wein/src/main/resources/static/
+  upload-dir: /home/wein/webapps/src/main/resources/static/
 
 # 로깅 설정 (SQL 쿼리 출력을 위해)
 logging:
