@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.List;
 
 @Controller
-@RequestMapping("/novel")
+@RequestMapping("/admin/novel")
 @RequiredArgsConstructor
 public class AdminNovelController {
 
@@ -41,14 +41,10 @@ public class AdminNovelController {
     }
 
     @PostMapping("/create")
-    public String create(@RequestParam("title") String title,
-                         @RequestParam("category") Novel.Category category,
-                         @RequestParam("description") String description,
-                         @RequestParam("status") Novel.Status status,
+    public String create(@ModelAttribute Novel novel,
                          @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
                          @AuthenticationPrincipal UserDetails userDetails) throws IOException {
-        
-        novelService.createNovel(title, category, description, status, coverImage, userDetails.getUsername());
+        novelService.createNovel(novel, coverImage, userDetails.getUsername());
         return "redirect:/admin/novel/list";
     }
 
@@ -86,13 +82,9 @@ public class AdminNovelController {
      */
     @PostMapping("/update/{id}")
     public String update(@PathVariable("id") Long id,
-                         @RequestParam("title") String title,
-                         @RequestParam("category") Novel.Category category,
-                         @RequestParam("description") String description,
-                         @RequestParam("status") Novel.Status status,
+                         @ModelAttribute Novel novel,
                          @RequestParam(value = "coverImage", required = false) MultipartFile coverImage) throws IOException {
-
-        novelService.updateNovel(id, title, category, description, status, coverImage);
+        novelService.updateNovel(id, novel, coverImage);
         return "redirect:/admin/novel/detail/" + id;
     }
 

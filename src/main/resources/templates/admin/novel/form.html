@@ -3,7 +3,7 @@
       th:replace="~{fragments/layout :: layout(${novel != null ? '소설 수정' : '소설 등록'}, ~{::div.content-wrapper}, 'novel', ~{::css-resources})}">
 
 <head>
-    <th:block th:fragment="css-resources">
+    <th:block th:fragment="css-resources"> 
         <!-- 추가 라이브러리 (Summernote & Cropper.js) -->
         <!-- crossorigin="anonymous" 추가: 스크립트 에러 발생 시 상세 내용을 확인하기 위함 -->
         <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
@@ -48,15 +48,15 @@
         <a href="/admin/novel/list" class="btn btn-outline-secondary me-3">
             <i class="bi bi-arrow-left"></i> 목록
         </a>
-        <h2 class="m-0 text-dark fw-bold" th:text="${novel != null ? '소설 수정' : '새 소설 등록'}">새 소설 등록</h2>
+        <h2 class="m-0 text-dark fw-bold" th:text="${novel.id != null ? '소설 수정' : '새 소설 등록'}">새 소설 등록</h2>
     </div>
 
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card shadow-sm">
                 <div class="card-body p-4">
-                    <!-- [수정] th:action과 th:object를 사용하여 동적으로 폼 설정 -->
-                    <form th:action="${novel != null} ? @{/admin/novel/update/{id}(id=${novel.id})} : @{/admin/novel/create}"
+                    <!-- th:action과 th:object를 사용하여 동적으로 폼 설정 -->
+                    <form th:action="${novel.id != null} ? @{/admin/novel/update/{id}(id=${novel.id})} : @{/admin/novel/create}"
                           th:object="${novel}"
                           method="post" enctype="multipart/form-data" id="novelForm">
                         
@@ -131,7 +131,7 @@
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end border-top pt-4">
-                            <a th:href="${novel != null} ? @{/admin/novel/detail/{id}(id=${novel.id})} : @{/admin/novel/list}" class="btn btn-light me-md-2">취소</a>
+                            <a th:href="${novel.id != null} ? @{/admin/novel/detail/{id}(id=${novel.id})} : @{/admin/novel/list}" class="btn btn-light me-md-2">취소</a>
                             <button type="submit" class="btn btn-primary px-5" th:text="${novel != null ? '소설 수정' : '소설 등록'}">소설 등록</button>
                         </div>
                     </form>
