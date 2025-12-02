@@ -1,4 +1,4 @@
-package kr.co.musicart.wnovel.controller;
+package kr.co.musicart.wnovel.controller.admin;
 
 import kr.co.musicart.wnovel.entity.Episode;
 import kr.co.musicart.wnovel.entity.Novel;
@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.List;
 
 @Controller
-@RequestMapping("/admin/novel")
+@RequestMapping("/novel")
 @RequiredArgsConstructor
 public class AdminNovelController {
 
@@ -44,7 +44,12 @@ public class AdminNovelController {
     public String create(@ModelAttribute Novel novel,
                          @RequestParam(value = "coverImage", required = false) MultipartFile coverImage,
                          @AuthenticationPrincipal UserDetails userDetails) throws IOException {
-        novelService.createNovel(novel, coverImage, userDetails.getUsername());
+        novelService.createNovel(novel.getTitle(),
+                novel.getCategory(),
+                novel.getDescription(),
+                novel.getStatus(),
+                coverImage,
+                userDetails.getUsername());
         return "redirect:/admin/novel/list";
     }
 
@@ -84,7 +89,11 @@ public class AdminNovelController {
     public String update(@PathVariable("id") Long id,
                          @ModelAttribute Novel novel,
                          @RequestParam(value = "coverImage", required = false) MultipartFile coverImage) throws IOException {
-        novelService.updateNovel(id, novel, coverImage);
+        novelService.updateNovel(id,
+                novel.getTitle(),
+                novel.getCategory(),
+                novel.getDescription(),
+                novel.getStatus(), coverImage);
         return "redirect:/admin/novel/detail/" + id;
     }
 

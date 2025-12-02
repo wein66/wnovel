@@ -38,7 +38,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // kr.co.musicart.wnovel.controller 패키지 내의 Admin*Controller 들에만 적용
         configurer.addPathPrefix("/admin", c ->
                 c.isAnnotationPresent(org.springframework.stereotype.Controller.class) &&
-                c.getPackage().getName().equals("kr.co.musicart.wnovel.controller") &&
+                c.getPackage().getName().equals("kr.co.musicart.wnovel.controller.admin") &&
                 c.getSimpleName().startsWith("Admin")
         );
     }

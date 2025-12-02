@@ -41,7 +41,7 @@
                         <td>
                             <span class="badge"
                                   th:classappend="${user.role.name() == 'ROLE_ADMIN'} ? 'bg-danger' : (${user.role.name() == 'ROLE_AUTHOR'} ? 'bg-primary' : 'bg-secondary')"
-                                  th:text="${user.role.displayName}">관리자</span>
+                                  th:text="${user.role.name() == 'ROLE_ADMIN' ? '관리자' : (user.role.name() == 'ROLE_AUTHOR' ? '작가' : '일반회원')}">관리자</span>
                         </td>
                         <td th:text="${#numbers.formatInteger(user.point, 0, 'COMMA')} + ' P'">1,000 P</td>
                         <td th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd')}">2024-01-01</td>

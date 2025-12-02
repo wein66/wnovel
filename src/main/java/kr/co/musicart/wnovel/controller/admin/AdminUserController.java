@@ -1,4 +1,4 @@
-package kr.co.musicart.wnovel.controller;
+package kr.co.musicart.wnovel.controller.admin;
 
 import kr.co.musicart.wnovel.dto.UserUpdateDto;
 import kr.co.musicart.wnovel.dto.UserCreateDto;

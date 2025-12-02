@@ -1,4 +1,4 @@
-package kr.co.musicart.wnovel.controller;
+package kr.co.musicart.wnovel.controller.admin;
 
 import kr.co.musicart.wnovel.entity.Episode;
 import kr.co.musicart.wnovel.service.EpisodeService;
