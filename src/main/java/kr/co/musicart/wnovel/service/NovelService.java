@@ -1,5 +1,6 @@
 package kr.co.musicart.wnovel.service;
 
+import kr.co.musicart.wnovel.entity.Episode;
 import kr.co.musicart.wnovel.entity.Novel;
 import kr.co.musicart.wnovel.entity.User;
 import kr.co.musicart.wnovel.repository.NovelRepository;
@@ -20,7 +21,8 @@ public class NovelService {
 
     private final NovelRepository novelRepository;
     private final UserRepository userRepository;
-    private final FileStoreService fileStoreService; // 파일 저장 서비스 주입
+    private final FileStoreService fileStoreService;
+    private final EpisodeService episodeService;
 
     /**
      * 소설 생성 (파일 업로드 포함)
@@ -71,6 +73,56 @@ public class NovelService {
         return novelRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 소설입니다."));
     }
-    
-    // 추후 수정, 삭제, 포인트 규칙 설정 메서드 추가 예정
+
+    /**
+     * 소설 정보 수정 (표지 이미지 포함)
+     */
+    @Transactional
+    public void updateNovel(Long novelId, String title, Novel.Category category, String description,
+                            Novel.Status status, MultipartFile newCoverImage) throws IOException {
+        Novel novel = novelRepository.findById(novelId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 소설입니다. ID: " + novelId));
+
+        // 1. 텍스트 정보 업데이트
+        novel.setTitle(title);
+        novel.setCategory(category);
+        novel.setDescription(description);
+        novel.setStatus(status);
+
+        // 2. 표지 이미지 업데이트 (새 파일이 있을 경우)
+        if (newCoverImage != null && !newCoverImage.isEmpty()) {
+            // 기존 이미지가 있으면 삭제
+            if (novel.getCoverImageUrl() != null && !novel.getCoverImageUrl().isEmpty()) {
+                fileStoreService.deleteFile(novel.getCoverImageUrl());
+            }
+            // 새 이미지 저장 및 URL 업데이트
+            String newCoverUrl = fileStoreService.storeCoverImage(newCoverImage, novel.getId());
+            novel.setCoverImageUrl(newCoverUrl);
+        }
+
+        // @Transactional에 의해 변경 감지(dirty checking)로 자동 업데이트됩니다.
+    }
+
+    /**
+     * 소설 삭제 (연관된 회차, 이미지 파일 모두 삭제)
+     */
+    @Transactional
+    public void deleteNovel(Long novelId) {
+        Novel novel = novelRepository.findById(novelId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 소설입니다. ID: " + novelId));
+
+        // 1. 연관된 모든 회차 삭제 (회차 삭제 시 내부적으로 이미지 파일도 삭제됨)
+        List<Episode> episodes = episodeService.getEpisodesByNovel(novelId);
+        for (Episode episode : episodes) {
+            episodeService.deleteEpisode(episode.getId());
+        }
+
+        // 2. 소설 표지 이미지 파일 삭제
+        if (novel.getCoverImageUrl() != null && !novel.getCoverImageUrl().isEmpty()) {
+            fileStoreService.deleteFile(novel.getCoverImageUrl());
+        }
+
+        // 3. 소설 엔티티 삭제
+        novelRepository.delete(novel);
+    }
 }

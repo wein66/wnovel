@@ -56,8 +56,19 @@ file:
   # upload-dir: E:/2025-2/aws/wnovel/src/main/resources/static/
   upload-dir: /home/wein/webapps/uploads/
 
+
 # 로깅 설정 (SQL 쿼리 출력을 위해)
 logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.type: trace
+# JWT (JSON Web Token) 설정
+jwt:
+  # 토큰 서명에 사용할 비밀 키 (Base64 인코딩).
+  # 이 값은 외부에 노출되면 안 됩니다. 실제 운영 환경에서는 환경 변수 등을 통해 주입하는 것이 안전합니다.
+  # 예시: openssl rand -base64 32
+  secret: c2VjcmV0LWtleS1mb3Itand0LXNlY3JldC1rZXktZm9yLWp3dC1zZWNyZXQta2V5LWZvci1qd3Q=
+  # 액세스 토큰 만료 시간 (밀리초 단위)
+  access-token-expiration-ms: 3600000 # 1시간
+  # 리프레시 토큰 만료 시간 (밀리초 단위)
+  refresh-token-expiration-ms: 604800000 # 7일

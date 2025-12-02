@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('회원 관리', ~{::div.content-wrapper}, 'user', null)}">
+<body>
+
+<div class="content-wrapper">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0 text-dark fw-bold"><i class="bi bi-people-fill me-2"></i>회원 관리</h2>
+        <!-- <a href="#" class="btn btn-primary"><i class="bi bi-plus-lg"></i> 새 회원 등록</a> -->
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4" style="width: 5%;">#</th>
+                        <th style="width: 15%;">아이디</th>
+                        <th style="width: 15%;">닉네임</th>
+                        <th style="width: 15%;">권한</th>
+                        <th style="width: 15%;">보유 포인트</th>
+                        <th style="width: 15%;">가입일</th>
+                        <th style="width: 20%;">관리</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <!-- 회원이 없을 경우 -->
+                    <tr th:if="${#lists.isEmpty(users)}">
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-person-x fs-1 d-block mb-3"></i>
+                            등록된 회원이 없습니다.
+                        </td>
+                    </tr>
+
+                    <!-- 회원 목록 반복 -->
+                    <tr th:each="user : ${users}">
+                        <td class="ps-4" th:text="${user.id}">1</td>
+                        <td class="fw-bold" th:text="${user.username}">admin</td>
+                        <td th:text="${user.nickname}">관리자</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${user.role.name() == 'ROLE_ADMIN'} ? 'bg-danger' : (${user.role.name() == 'ROLE_AUTHOR'} ? 'bg-primary' : 'bg-secondary')"
+                                  th:text="${user.role.displayName}">관리자</span>
+                        </td>
+                        <td th:text="${#numbers.formatInteger(user.point, 0, 'COMMA')} + ' P'">1,000 P</td>
+                        <td th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd')}">2024-01-01</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-secondary me-1">수정</a>
+                            <a href="#" class="btn btn-sm btn-outline-danger">삭제</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- 페이징 처리가 필요하다면 이곳에 추가 -->
+    </div>
+</div>
+
+</body>
+</html>

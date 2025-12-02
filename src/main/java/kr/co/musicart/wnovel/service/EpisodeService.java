@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.persistence.EntityManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,7 @@ public class EpisodeService {
     private final EpisodeImageRepository episodeImageRepository;
     private final NovelRepository novelRepository;
     private final FileStoreService fileStoreService;
+    private final EntityManager entityManager;
 
     /**
      * 특정 소설의 에피소드 목록 조회 (회차 번호 순)
@@ -37,6 +39,15 @@ public class EpisodeService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 소설입니다."));
         
         return episodeRepository.findAllByNovelOrderByEpisodeNumberAsc(novel);
+    }
+
+    /**
+     * 특정 에피소드 조회
+     */
+    @Transactional(readOnly = true)
+    public Episode getEpisode(Long episodeId) {
+        return episodeRepository.findById(episodeId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회차입니다. ID: " + episodeId));
     }
 
     /**
@@ -103,6 +114,52 @@ public class EpisodeService {
     }
 
     /**
+     * 에피소드 수정
+     * 본문 내용이 변경되면, 기존 이미지 정보를 모두 지우고 새로 파싱하여 저장합니다.
+     */
+    @Transactional
+    public void updateEpisode(Long episodeId, String title, int requiredPoint, String content) {
+        Episode episode = episodeRepository.findById(episodeId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회차입니다. ID: " + episodeId));
+
+        // 1. 텍스트 정보 업데이트
+        episode.setTitle(title);
+        episode.setRequiredPoint(requiredPoint);
+
+        // 2. 본문(content)이 변경되었는지 확인하고 이미지 정보 업데이트
+        if (!episode.getContent().equals(content)) {
+            episode.setContent(content);
+
+            // 기존 이미지 정보 가져오기 (파일 삭제용)
+            List<EpisodeImage> oldImages = new ArrayList<>(episode.getImages());
+
+            // 새로운 이미지 URL 목록 추출
+            List<String> newImageUrls = extractImageUrls(content);
+
+            // 기존 Episode와 EpisodeImage의 연관관계 제거 및 DB에서 삭제 (orphanRemoval=true)
+            episode.getImages().clear();
+            entityManager.flush(); // DB에 clear() 연산을 즉시 반영
+
+            // 새로운 이미지 정보 추가
+            int sortOrder = 0;
+            for (String url : newImageUrls) {
+                String originalFileName = url.substring(url.lastIndexOf("/") + 1);
+                EpisodeImage newImage = new EpisodeImage(episode, url, originalFileName, 0L, sortOrder++);
+                episode.addImage(newImage); // 연관관계 편의 메서드 사용
+            }
+
+            // 더 이상 사용되지 않는 기존 이미지 파일 삭제
+            for (EpisodeImage oldImage : oldImages) {
+                // 새 이미지 목록에 없는 경우에만 파일 삭제
+                if (!newImageUrls.contains(oldImage.getImageUrl())) {
+                    fileStoreService.deleteFile(oldImage.getImageUrl());
+                }
+            }
+        }
+        // @Transactional에 의해 메서드 종료 시 변경된 내용이 DB에 반영됩니다.
+    }
+
+    /**
      * 이미지 개별 삭제
      */
     public void deleteImage(Long imageId) {
@@ -119,18 +176,19 @@ public class EpisodeService {
     /**
      * 회차 전체 삭제
      */
+    @Transactional
     public void deleteEpisode(Long episodeId) {
         Episode episode = episodeRepository.findById(episodeId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회차입니다."));
         
-        // 연관된 이미지 파일들 삭제
-        List<EpisodeImage> images = episodeImageRepository.findByEpisodeIdOrderBySortOrderAsc(episodeId);
-        for (EpisodeImage img : images) {
-            fileStoreService.deleteFile(img.getImageUrl());
+        // 1. 연관된 모든 이미지 파일들을 먼저 삭제
+        // episode.getImages()를 통해 LAZY 로딩된 이미지 목록을 가져옴
+        for (EpisodeImage image : episode.getImages()) {
+            fileStoreService.deleteFile(image.getImageUrl());
         }
         
-        // DB 데이터 삭제 (Cascade 설정이 되어 있어도 명시적으로 처리)
-        episodeImageRepository.deleteByEpisodeId(episodeId);
+        // 2. 에피소드 엔티티 삭제
+        // CascadeType.ALL 설정에 의해 연관된 EpisodeImage 레코드도 DB에서 함께 삭제됨
         episodeRepository.delete(episode);
     }
 

@@ -15,11 +15,31 @@ import java.util.List;
 public class Novel {
 
     public enum Status {
-        PUBLISHED, COMPLETED, DRAFT
+        PUBLISHED("연재중"),
+        COMPLETED("완결"),
+        DRAFT("임시저장");
+
+        @Getter
+        private final String displayName;
+
+        Status(String displayName) {
+            this.displayName = displayName;
+        }
     }
 
     public enum Category {
-        FANTASY, MUHYEOP, ROMANCE, LITERATURE, READER_BOARD
+        FANTASY("판타지"),
+        MUHYEOP("무협"),
+        ROMANCE("로맨스"),
+        LITERATURE("문학"),
+        READER_BOARD("독자게시판");
+
+        @Getter
+        private final String displayName;
+
+        Category(String displayName) {
+            this.displayName = displayName;
+        }
     }
 
     @Id

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" 
-      th:replace="~{fragments/layout :: layout('소설 등록', ~{::div.content-wrapper}, 'novel', ~{::css-resources})}">
+      th:replace="~{fragments/layout :: layout(${novel != null ? '소설 수정' : '소설 등록'}, ~{::div.content-wrapper}, 'novel', ~{::css-resources})}">
+
 <head>
     <th:block th:fragment="css-resources">
         <!-- 추가 라이브러리 (Summernote & Cropper.js) -->
@@ -47,38 +48,45 @@
         <a href="/admin/novel/list" class="btn btn-outline-secondary me-3">
             <i class="bi bi-arrow-left"></i> 목록
         </a>
-        <h2 class="m-0 text-dark fw-bold">새 소설 등록</h2>
+        <h2 class="m-0 text-dark fw-bold" th:text="${novel != null ? '소설 수정' : '새 소설 등록'}">새 소설 등록</h2>
     </div>
 
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card shadow-sm">
                 <div class="card-body p-4">
-                    <form th:action="@{/admin/novel/create}" method="post" enctype="multipart/form-data" id="novelForm">
+                    <!-- [수정] th:action과 th:object를 사용하여 동적으로 폼 설정 -->
+                    <form th:action="${novel != null} ? @{/admin/novel/update/{id}(id=${novel.id})} : @{/admin/novel/create}"
+                          th:object="${novel}"
+                          method="post" enctype="multipart/form-data" id="novelForm">
                         
                         <!-- 제목 입력 -->
                         <div class="mb-4">
                             <label for="title" class="form-label fw-bold">소설 제목 <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-lg" id="title" name="title" placeholder="소설 제목을 입력하세요" required>
+                            <!-- [수정] th:field로 데이터 바인딩 -->
+                            <input type="text" class="form-control form-control-lg" id="title" th:field="*{title}" placeholder="소설 제목을 입력하세요" required>
                         </div>
 
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label for="category" class="form-label fw-bold">카테고리 <span class="text-danger">*</span></label>
-                                <select class="form-select" id="category" name="category" required>
+                                <!-- [수정] th:field로 데이터 바인딩 -->
+                                <select class="form-select" id="category" th:field="*{category}" required>
                                     <option value="" selected disabled>카테고리를 선택하세요</option>
                                     <option th:each="cat : ${categories}" 
                                             th:value="${cat}" 
-                                            th:text="${cat}">판타지</option>
+                                            th:text="${cat.displayName}"
+                                            th:selected="${cat == (novel != null ? novel.category : null)}">판타지</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">상태</label>
                                 <div>
-                                    <input type="radio" class="btn-check" name="status" id="status-draft" value="DRAFT" checked>
+                                    <!-- [수정] th:field와 th:checked로 데이터 바인딩 -->
+                                    <input type="radio" class="btn-check" th:field="*{status}" id="status-draft" value="DRAFT">
                                     <label class="btn btn-outline-secondary" for="status-draft">임시저장</label>
 
-                                    <input type="radio" class="btn-check" name="status" id="status-published" value="PUBLISHED">
+                                    <input type="radio" class="btn-check" th:field="*{status}" id="status-published" value="PUBLISHED">
                                     <label class="btn btn-outline-success" for="status-published">연재시작</label>
                                 </div>
                             </div>
@@ -100,13 +108,18 @@
                                     <input type="file" id="finalCoverImage" name="coverImage" style="display: none;">
                                     
                                     <div class="form-text">
-                                        - 이미지를 직접 업로드하거나 AI를 통해 생성할 수 있습니다.<br>
-                                        - 선택/생성된 이미지는 자동으로 2:3 비율(600x900) 편집창이 열립니다.
+                                        - 이미지를 직접 업로드하거나 AI를 통해 생성할 수 있습니다. (2:3 비율 권장)<br>
+                                        - <span th:if="${novel != null}">새 이미지를 업로드하면 기존 표지가 교체됩니다.</span>
+                                        - <span th:if="${novel == null}">표지 이미지는 등록 후 수정할 수 있습니다.</span>
                                     </div>
                                 </div>
                                 <!-- 미리보기 영역 -->
                                 <div>
-                                    <img id="preview-image" class="rounded shadow-sm" src="#" alt="Cover Preview">
+                                    <!-- [수정] 수정 모드일 때 기존 이미지 표시 -->
+                                    <img id="preview-image" class="rounded shadow-sm"
+                                         th:src="${novel != null && novel.coverImageUrl != null} ? ${novel.coverImageUrl} : '#'"
+                                         th:style="${novel != null && novel.coverImageUrl != null} ? 'display: block;' : 'display: none;'"
+                                         alt="Cover Preview">
                                 </div>
                             </div>
                         </div>
@@ -114,12 +127,12 @@
                         <!-- 설명 입력 (Summernote 위지윅) -->
                         <div class="mb-4">
                             <label for="description" class="form-label fw-bold">줄거리 / 작품 설명</label>
-                            <textarea id="summernote" name="description"></textarea>
+                            <textarea id="summernote" name="description" th:text="*{description}"></textarea>
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end border-top pt-4">
-                            <button type="button" class="btn btn-light me-md-2" onclick="history.back()">취소</button>
-                            <button type="submit" class="btn btn-primary px-5">소설 등록</button>
+                            <a th:href="${novel != null} ? @{/admin/novel/detail/{id}(id=${novel.id})} : @{/admin/novel/list}" class="btn btn-light me-md-2">취소</a>
+                            <button type="submit" class="btn btn-primary px-5" th:text="${novel != null ? '소설 수정' : '소설 등록'}">소설 등록</button>
                         </div>
                     </form>
                 </div>

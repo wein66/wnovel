@@ -23,7 +23,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setPassword(passwordEncoder.encode("1234")); // 초기 비밀번호
             admin.setNickname("관리자");
             admin.setRole(User.Role.ROLE_ADMIN);
-            admin.setPointBalance(999999); // 관리자는 포인트 넉넉하게
+            admin.setPoint(999999); // 관리자는 포인트 넉넉하게
 
             userRepository.save(admin);
             System.out.println(">>> 초기 관리자 계정이 생성되었습니다. (ID: admin / PW: 1234)");

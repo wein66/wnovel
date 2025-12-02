@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.List;
 
 @Controller
-@RequestMapping("/admin/novel")
+@RequestMapping("/novel")
 @RequiredArgsConstructor
 public class AdminNovelController {
 
@@ -33,6 +33,8 @@ public class AdminNovelController {
 
     @GetMapping("/create")
     public String createForm(Model model) {
+        // [수정] 생성 폼에서도 th:object를 사용하기 위해 비어있는 Novel 객체를 모델에 추가
+        model.addAttribute("novel", new Novel());
         model.addAttribute("categories", Novel.Category.values());
         model.addAttribute("menu", "novel");
         return "admin/novel/form";
@@ -63,5 +65,40 @@ public class AdminNovelController {
         model.addAttribute("menu", "novel");
         
         return "admin/novel/detail";
+    }
+
+    /**
+     * 소설 수정 폼 페이지
+     * 기존 소설 정보를 불러와 폼에 채워줍니다.
+     */
+    @GetMapping("/update/{id}")
+    public String updateForm(@PathVariable("id") Long id, Model model) {
+        Novel novel = novelService.getNovel(id);
+        model.addAttribute("novel", novel);
+        model.addAttribute("categories", Novel.Category.values());
+        model.addAttribute("menu", "novel");
+        // 생성 폼(form.html)을 수정 폼으로 재활용
+        return "admin/novel/form";
+    }
+
+    /**
+     * 소설 수정 처리
+     */
+    @PostMapping("/update/{id}")
+    public String update(@PathVariable("id") Long id,
+                         @RequestParam("title") String title,
+                         @RequestParam("category") Novel.Category category,
+                         @RequestParam("description") String description,
+                         @RequestParam("status") Novel.Status status,
+                         @RequestParam(value = "coverImage", required = false) MultipartFile coverImage) throws IOException {
+
+        novelService.updateNovel(id, title, category, description, status, coverImage);
+        return "redirect:/admin/novel/detail/" + id;
+    }
+
+    @PostMapping("/delete/{id}")
+    public String delete(@PathVariable("id") Long id) {
+        novelService.deleteNovel(id);
+        return "redirect:/admin/novel/list";
     }
 }

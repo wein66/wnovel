@@ -7,14 +7,23 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user")
+@Table(name = "users") // 'user'는 DB 예약어일 수 있으므로 'users' 사용 권장
 @Getter
 @Setter
 @NoArgsConstructor
 public class User {
 
     public enum Role {
-        ROLE_ADMIN, ROLE_WRITER, ROLE_USER
+        ROLE_USER("일반회원"),
+        ROLE_AUTHOR("작가"),
+        ROLE_ADMIN("관리자");
+
+        @Getter
+        private final String displayName;
+
+        Role(String displayName) {
+            this.displayName = displayName;
+        }
     }
 
     @Id
@@ -31,7 +40,7 @@ public class User {
     private String nickname;
 
     @Column(nullable = false)
-    private int pointBalance = 0;
+    private int point = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

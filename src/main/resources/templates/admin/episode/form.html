@@ -1,10 +1,95 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" 
-      th:replace="~{fragments/layout :: layout('회차 등록', ~{::div.content-wrapper}, 'novel', ~{::#css-resources})}">
+      th:replace="~{fragments/layout :: layout(${episode.id != null ? '회차 수정' : '회차 등록'}, ~{::div.content-wrapper}, 'novel', ~{::#css-resources})}">
 <head>
     <th:block id="css-resources">
         <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
         <style>
+            /* --- 블록 에디터 스타일 --- */
+            /* 캔버스 (ul) 스타일 */
+            #novel-canvas {
+                list-style: none; /* 점 없애기 */
+                padding: 10px;
+                margin: 0;
+                min-height: 400px;
+                background: #f4f6f9;
+                border: 1px dashed #aaa;
+                border-radius: 5px;
+            }
+            /* 공통 리스트 아이템 스타일 */
+            #novel-canvas li {
+                position: relative;
+                margin-bottom: 10px;
+                border: 1px solid transparent; /* 에디터 모드에서 영역 표시용 */
+            }
+            /* 마우스 올렸을 때 편집 영역 표시 */
+            #novel-canvas li:hover {
+                border: 1px dashed #007bff;
+            }
+            /* TYPE 3: 텍스트(지문/독백) 스타일 */
+            .text-type {
+                padding: 20px;
+                background: #fff;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                justify-content: center; /* 가운데 정렬 */
+            }
+            .narration-box {
+                width: 90%;
+                background: #fdfdfd;
+                border: 1px solid #e0e0e0;
+                padding: 20px;
+                border-radius: 8px;
+                color: #555;
+                font-size: 1.05em;
+                line-height: 1.6;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            }
+            /* TYPE 1: 미연시 배경 스타일 (SCENE) */
+            .scene-type {
+                height: 400px;
+                background-color: #333; /* 이미지 없을 때 기본색 */
+                background-size: cover;
+                background-position: center;
+                display: flex;
+                align-items: flex-end; /* 텍스트 박스 하단 정렬 */
+                position: relative;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+            .scene-overlay {
+                width: 100%;
+                background: rgba(0, 0, 0, 0.7); /* 반투명 검정 배경 */
+                color: white;
+                padding: 20px;
+                border-top: 2px solid orange;
+            }
+            /* TYPE 2: 채팅 스타일 (CHAT) */
+            .chat-type {
+                display: flex;
+                padding: 15px;
+                background: #fff;
+                border-bottom: 1px solid #eee;
+            }
+            .chat-thumb {
+                width: 60px;
+                height: 60px;
+                background: #ddd;
+                border-radius: 50%;
+                overflow: hidden;
+                margin-right: 15px;
+                flex-shrink: 0;
+            }
+            .chat-thumb img { width: 100%; height: 100%; object-fit: cover; }
+            .chat-content { flex-grow: 1; }
+            .chat-bubble { background: #f1f0f0; padding: 10px 15px; border-radius: 15px; display: inline-block; margin-top: 5px; }
+            /* 에디터 전용 UI (저장할 땐 제거됨) */
+            .name-field { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; display: block; color: #ffcc00; /* 이름 강조 */ }
+            [contenteditable]:empty:before { content: attr(placeholder); color: #ccc; display: block; /* For Firefox */ }
+            .editor-controls { position: absolute; top: 5px; right: 5px; z-index: 100; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px; display: none; /* 평소엔 숨김 */ }
+            #novel-canvas li:hover .editor-controls { display: block; /* 마우스 오버시 보임 */ }
+            .btn-upload { cursor: pointer; color: blue; margin-right: 5px; }
+            .btn-delete { cursor: pointer; color: red; }
             .note-editable { background-color: white; }
         </style>
     </th:block>
@@ -16,44 +101,73 @@
         <a th:href="@{/admin/novel/detail/{id}(id=${novelId})}" class="btn btn-outline-secondary me-3">
             <i class="bi bi-arrow-left"></i> 소설 상세로
         </a>
-        <h2 class="m-0 text-dark fw-bold">새 회차 등록</h2>
+        <h2 class="m-0 text-dark fw-bold" th:text="${episode.id != null ? '회차 수정' : '새 회차 등록'}">새 회차 등록</h2>
     </div>
 
     <div class="row justify-content-center">
         <div class="col-lg-12">
             <div class="card shadow-sm">
                 <div class="card-body p-4">
-                    <form th:action="@{/admin/episode/create}" method="post">
+                    <form id="episodeForm" th:action="${episode.id != null} ? @{/admin/episode/update/{id}(id=${episode.id})} : @{/admin/episode/create}"
+                          th:object="${episode}" method="post">
                         <input type="hidden" name="novelId" th:value="${novelId}">
                         
                         <div class="row mb-3">
                             <div class="col-md-8">
                                 <label for="title" class="form-label fw-bold">회차 제목 <span class="text-danger">*</span></label>
-                                <!-- [수정] required 속성 제거 및 placeholder 변경 -->
-                                <input type="text" class="form-control" id="title" name="title" placeholder="제목을 비워두면 이전 회차 제목(또는 소설 제목)이 자동으로 등록됩니다.">
+                                <!-- [수정] th:field 적용 및 placeholder 수정 -->
+                                <input type="text" class="form-control" id="title" th:field="*{title}" placeholder="제목을 비워두면 이전 회차 제목(또는 소설 제목)이 자동으로 등록됩니다.">
                             </div>
                             <div class="col-md-2">
                                 <label for="episodeNumber" class="form-label fw-bold">회차 번호</label>
-                                <input type="number" class="form-control" id="episodeNumber" name="episodeNumber" th:value="${nextEpisodeNumber}" required>
+                                <!-- [수정] th:field 적용, 수정 시 읽기 전용으로 변경 -->
+                                <input type="number" class="form-control" id="episodeNumber" th:field="*{episodeNumber}" th:readonly="${episode.id != null}" required>
                             </div>
                             <div class="col-md-2">
                                 <label for="requiredPoint" class="form-label fw-bold">차감 포인트</label>
-                                <input type="number" class="form-control" id="requiredPoint" name="requiredPoint" value="0" min="0">
+                                <input type="number" class="form-control" id="requiredPoint" th:field="*{requiredPoint}" min="0">
                             </div>
                         </div>
 
                         <!-- Summernote 에디터 -->
                         <div class="mb-4">
-                            <label class="form-label fw-bold">본문 내용</label>
-                            <textarea id="summernote" name="content"></textarea>
-                            <!-- [추가] 글자 수 표시 영역 -->
-                            <div class="text-end mt-2 text-muted">
-                                <small>현재 글자 수: <span id="charCount" class="fw-bold text-primary">0</span>자 (공백 포함)</small>
+                            <label class="form-label fw-bold mb-3">본문 내용</label>
+
+                            <!-- [수정] 에디터 선택 탭 -->
+                            <ul class="nav nav-tabs" id="editorTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="summernote-tab" data-bs-toggle="tab" data-bs-target="#summernote-pane" type="button" role="tab">일반 에디터</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="block-editor-tab" data-bs-toggle="tab" data-bs-target="#block-editor-pane" type="button" role="tab">블록 에디터</button>
+                                </li>
+                            </ul>
+
+                            <!-- [수정] 탭 컨텐츠 -->
+                            <div class="tab-content border border-top-0 p-3" id="editorTabContent">
+                                <!-- 1. Summernote 에디터 -->
+                                <div class="tab-pane fade show active" id="summernote-pane" role="tabpanel">
+                                    <textarea id="summernote" name="content" th:text="*{content}"></textarea>
+                                    <div class="text-end mt-2 text-muted">
+                                        <small>현재 글자 수: <span id="charCount" class="fw-bold text-primary">0</span>자 (공백 포함)</small>
+                                    </div>
+                                </div>
+                                <!-- 2. 블록 에디터 -->
+                                <div class="tab-pane fade" id="block-editor-pane" role="tabpanel">
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSceneBlock()">🖼️ 배경(게임형) 추가</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addChatBlock()">💬 썸네일(채팅) 추가</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTextBlock()">📝 텍스트(지문) 추가</button>
+                                    </div>
+                                    <ul id="novel-canvas"></ul>
+                                </div>
                             </div>
+
                         </div>
 
                         <div class="d-flex justify-content-end border-top pt-4">
-                            <button type="submit" class="btn btn-primary px-5">회차 등록 완료</button>
+                            <!-- [수정] 버튼 텍스트 동적 변경 -->
+                            <button type="submit" class="btn btn-primary px-5" th:text="${episode.id != null ? '수정 완료' : '회차 등록 완료'}">회차 등록 완료</button>
                         </div>
                     </form>
                 </div>
@@ -66,6 +180,17 @@
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js" crossorigin="anonymous"></script>
     <script>
         $(document).ready(function() {
+            // --- 폼 제출 로직 수정 ---
+            $('#episodeForm').on('submit', function() {
+                // 블록 에디터 탭이 활성화 상태이면, 해당 컨텐츠를 summernote textarea에 채워넣음
+                if ($('#block-editor-tab').hasClass('active')) {
+                    prepareBlockContent();
+                }
+            });
+
+            // [수정] Summernote에 기존 내용이 있으면 채워넣고 시작
+            const initialContent = $('#summernote').val();
+
             $('#summernote').summernote({
                 placeholder: '소설 본문을 작성하세요. 이미지를 드래그하거나 업로드하면 자동으로 본문에 삽입됩니다.',
                 tabsize: 2,
@@ -95,11 +220,26 @@
                     },
                     // [추가] 초기화 시 글자 수 계산
                     onInit: function() {
-                        const textLength = $(this).summernote('text').length;
+                        // 수정 모드일 때, 초기 텍스트가 있으면 summernote('code')로 다시 설정
+                        if (initialContent) {
+                            $(this).summernote('code', initialContent);
+                        }
+                        // [수정] 내용이 설정된 후 글자 수 계산
+                        const currentText = $(this).summernote('text') || ''; // undefined 방지
+                        const textLength = currentText.length;
                         $('#charCount').text(textLength.toLocaleString());
                     }
                 }
             });
+
+            // --- 블록 에디터 초기화 ---
+            // 수정 모드일 때, content 내용이 블록 에디터 형식인지 확인하고 캔버스에 렌더링
+            // (간단하게 li 태그가 있는지 여부로 판단)
+            if (initialContent && initialContent.trim().startsWith('<li')) {
+                $('#novel-canvas').html(initialContent);
+                // 블록 에디터 탭을 활성화
+                new bootstrap.Tab($('#block-editor-tab')).show();
+            }
 
             function uploadImage(file) {
                 let formData = new FormData();
@@ -121,7 +261,132 @@
                     }
                 });
             }
+
+            // 7. [중요] 폼 전송 전 정리 작업 (HTML Clean-up)
+            function prepareBlockContent() {
+                let $clone = $('#novel-canvas').clone();
+                $clone.find('.editor-controls').remove();
+                $clone.find('[contenteditable]').removeAttr('contenteditable placeholder');
+                
+                // 정리된 HTML을 summernote textarea에 담기
+                // 서버는 content 파라미터 하나만 받으면 됨
+                $('#summernote').val($clone.html());
+            }
         });
+
+        /**
+         * [수정] 블록 에디터용 이미지 업로드 함수
+         * Summernote의 uploadImage 함수와 유사하게 동작합니다.
+         * @param {File} file - 업로드할 이미지 파일
+         * @param {function} successCallback - 업로드 성공 시 호출될 콜백 함수 (파라미터: 이미지 URL)
+         */
+        function uploadBlockImage(file, successCallback) {
+            let formData = new FormData();
+            formData.append('file', file);
+            formData.append('novelId', '[[${novelId}]]');
+
+            $.ajax({
+                url: '/admin/api/episode/upload-image', // Summernote와 동일한 API 사용
+                method: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: successCallback, // 성공 시 전달받은 콜백 함수 실행
+                error: function(err) {
+                    console.error(err);
+                    alert('이미지 업로드에 실패했습니다.');
+                }
+            });
+        }
+
+        // ==================================================
+        //               블록 에디터 스크립트 (전역 스코프로 이동)
+        // ==================================================
+
+        // 1. 배경형(미연시) 블록 추가
+        function addSceneBlock() {
+            let html = `
+                <li class="scene-type">
+                    <div class="editor-controls">
+                        <label class="btn-upload">
+                            📷 배경 변경
+                            <input type="file" accept="image/*" style="display:none" onchange="previewBg(this)">
+                        </label>
+                        <span class="btn-delete" onclick="removeBlock(this)">❌ 삭제</span>
+                    </div>
+                    <div class="scene-overlay">
+                        <div class="name-field" contenteditable="true" placeholder="이름"></div>
+                        <div class="text-field" contenteditable="true" placeholder="대사를 입력하세요..."></div>
+                    </div>
+                </li>
+            `;
+            $('#novel-canvas').append(html);
+        }
+
+        // 2. 썸네일형(채팅) 블록 추가
+        function addChatBlock() {
+            let html = `
+                <li class="chat-type">
+                    <div class="editor-controls">
+                        <label class="btn-upload">
+                            📷 사진 변경
+                            <input type="file" accept="image/*" style="display:none" onchange="previewThumb(this)">
+                        </label>
+                        <span class="btn-delete" onclick="removeBlock(this)">❌ 삭제</span>
+                    </div>
+                    <div class="chat-thumb">
+                        <img src="https://via.placeholder.com/60" alt="프로필">
+                    </div>
+                    <div class="chat-content">
+                        <div class="name-field" style="color:#333;" contenteditable="true" placeholder="이름"></div>
+                        <div class="chat-bubble" contenteditable="true" placeholder="내용을 입력하세요..."></div>
+                    </div>
+                </li>
+            `;
+            $('#novel-canvas').append(html);
+        }
+
+        // 3. 텍스트(지문) 블록 추가
+        function addTextBlock() {
+            let html = `
+                <li class="text-type">
+                    <div class="editor-controls">
+                        <span class="btn-delete" onclick="removeBlock(this)">❌ 삭제</span>
+                    </div>
+                    <div class="narration-box" contenteditable="true" placeholder="상황 설명이나 독백을 입력하세요..."></div>
+                </li>
+            `;
+            $('#novel-canvas').append(html);
+        }
+
+        // 4. 블록 삭제 기능
+        function removeBlock(btn) {
+            if(confirm('이 대화를 삭제하시겠습니까?')) {
+                $(btn).closest('li').remove();
+            }
+        }
+
+        // 5. 이미지 미리보기 (배경형)
+        function previewBg(input) {
+            const file = input.files[0];
+            if (file) {
+                // [수정] 서버에 이미지 업로드 후 URL을 배경으로 설정
+                uploadBlockImage(file, function(url) {
+                    $(input).closest('li.scene-type').css('background-image', `url(${url})`);
+                });
+            }
+        }
+
+        // 6. 이미지 미리보기 (채팅형)
+        function previewThumb(input) {
+            const file = input.files[0];
+            if (file) {
+                // [수정] 서버에 이미지 업로드 후 URL을 src로 설정
+                uploadBlockImage(file, function(url) {
+                    $(input).closest('li.chat-type').find('.chat-thumb img').attr('src', url);
+                });
+            }
+        }
     </script>
 </div>
 

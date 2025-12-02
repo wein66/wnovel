@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout('새 회원 등록', ~{::div.content-wrapper}, 'user', null)}">
+<body>
+
+<div class="content-wrapper">
+    <h2 class="m-0 text-dark fw-bold mb-4"><i class="bi bi-person-plus-fill me-2"></i>새 회원 등록</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form th:action="@{/admin/user/write}" th:object="${userCreateDto}" method="post">
+                <div class="mb-3">
+                    <label for="username" class="form-label">아이디</label>
+                    <input type="text" id="username" th:field="*{username}" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">비밀번호</label>
+                    <input type="password" id="password" th:field="*{password}" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="nickname" class="form-label">닉네임</label>
+                    <input type="text" id="nickname" th:field="*{nickname}" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="role" class="form-label">권한</label>
+                    <select id="role" th:field="*{role}" class="form-select">
+                        <option th:each="roleValue : ${roles}"
+                                th:value="${roleValue}"
+                                th:text="${roleValue.displayName}">
+                        </option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="point" class="form-label">보유 포인트</label>
+                    <input type="number" id="point" th:field="*{point}" class="form-control" value="0">
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">등록</button>
+                    <a th:href="@{/admin/user/list}" class="btn btn-secondary">취소</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
